@@ -16,18 +16,31 @@ namespace signOnApi.Controllers
     [ApiController]
     public class AuthenticateController : ControllerBase
     {
-        public IActionResult Index()
+        [HttpPost]
+        public IActionResult Index(string username, string password)
         {
-            // need to validate before generating the claims
-            var claims = new[]
+            if ((username != "admin") || (password != "admin123"))//We can also validate this by database.
             {
-                new Claim(JwtRegisteredClaimNames.Sub,"userId"),
-                new Claim("Email","testEmail")
+                return Ok("Invalid Username or Password!");
+            }
+
+            var tokenJson = GenerateToken();
+            return Ok(new { access_token= tokenJson });
+        }
+
+        private string GenerateToken()
+        {
+            var claims = new[]
+           {
+                new Claim(JwtRegisteredClaimNames.Sub,"123"),
+                new Claim("Email","testEmail@gmail.com")
             };
             var stringBytes = Encoding.UTF8.GetBytes(Constants.SecertKey);
             var key = new SymmetricSecurityKey(stringBytes);
             var algorithm = SecurityAlgorithms.HmacSha256;
+
             var signInCredentials = new SigningCredentials(key, algorithm);
+            
             var token = new JwtSecurityToken(
                 Constants.Issuer,
                 Constants.Audience,
@@ -35,9 +48,9 @@ namespace signOnApi.Controllers
                 notBefore: DateTime.Now,
                 expires: DateTime.Now.AddDays(1),
                 signInCredentials
-                ) ;
-            var tokenJson = new JwtSecurityTokenHandler().WriteToken(token);
-            return Ok(new { access_token= tokenJson });
+                );
+            
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
